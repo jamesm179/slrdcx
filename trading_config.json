@@ -1,0 +1,62 @@
+{
+    "metadata": {
+        "version": "2.0.0"
+    },
+    "exchange": {
+        "websocket_url": "wss://ws-api.coindcx.com/v1/sub"
+    },
+    "websocket": {
+        "timeout": 60,
+        "ping_interval": 10
+    },
+    "trading_pairs": {
+        "default_pairs": [
+            {
+                "symbol": "BTC/USDT",
+                "channel": "B-BTC_USDT@prices-futures",
+                "enabled": true,
+                "quantity_precision": 3
+            },
+            {
+                "symbol": "ETH/USDT",
+                "channel": "B-ETH_USDT@prices-futures",
+                "enabled": true,
+                "quantity_precision": 3
+            }
+        ]
+    },
+    "server": {
+        "host": "0.0.0.0",
+        "port": 8000,
+        "debug": true,
+        "auto_open_browser": true
+    },
+    "ui_settings": {
+        "update_interval_ms": 1000
+    },
+    "risk_management": {
+        "take_profit": {
+            "percentage": 5.0
+        },
+        "stop_loss": {
+            "percentage": 50.0
+        }
+    },
+    "leverage": {
+        "default": 10.0,
+        "min": 1.0,
+        "max": 15.0
+    },
+    "trading_parameters": {
+        "quick_trade_amount": 10.0,
+        "min_order_value_usdt": 6.0,
+        "default_order_type": "limit_order",
+        "notification_preference": "no_notification",
+        "default_time_in_force": "good_till_cancel"
+    },
+    "features": {
+        "auto_tpsl": {
+            "enabled": true
+        }
+    }
+}
