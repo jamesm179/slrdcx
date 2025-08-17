@@ -29,22 +29,32 @@ class TradeManager:
 
     def _initialize_csv(self):
         if not self.trades_file.exists():
-            headers = ['trade_id', 'symbol', 'action', 'entry_price', 'exit_price', 'quantity', 'leverage', 'entry_time', 'exit_time', 'pnl', 'status', 'stop_loss', 'take_profit', 'exit_reason', 'order_id', 'order_status']
+            headers = [
+                'trade_id', 'symbol', 'action', 'entry_price', 'exit_price',
+                'quantity', 'leverage', 'entry_time', 'exit_time', 'pnl',
+                'status', 'stop_loss', 'take_profit', 'exit_reason',
+                'order_id', 'order_status'
+            ]
             with open(self.trades_file, 'w', newline='', encoding='utf-8') as file:
                 writer = csv.writer(file)
                 writer.writerow(headers)
 
     def _load_existing_data(self):
         try:
-            if self.trades_file.exists():
+            if self.trades_file.exists() and self.trades_file.stat().st_size > 0:
                 with open(self.trades_file, 'r', encoding='utf-8') as file:
                     reader = csv.DictReader(file)
                     for row in reader:
-                        trade_data = {k: (v if v else None) for k, v in row.items()}
-                        # Convert numeric fields
+                        # Filter out None keys
+                        filtered_row = {k: v for k, v in row.items() if k is not None}
+                        trade_data = {k: (v if v else None) for k, v in filtered_row.items()}
+
                         for f in ['entry_price', 'exit_price', 'quantity', 'leverage', 'pnl', 'stop_loss', 'take_profit']:
-                            if trade_data[f] is not None:
-                                trade_data[f] = float(trade_data[f])
+                            if f in trade_data and trade_data[f] is not None:
+                                try:
+                                    trade_data[f] = float(trade_data[f])
+                                except (ValueError, TypeError):
+                                    trade_data[f] = None
 
                         trade = Trade(**trade_data)
                         if trade.status == 'open':
@@ -77,7 +87,14 @@ class TradeManager:
                 leverage=leverage,
                 entry_time=datetime.now().isoformat(),
                 order_id=order_data['id'],
-                status='open'
+                status='open',
+                exit_price=None,
+                exit_time=None,
+                pnl=0.0,
+                stop_loss=None,
+                take_profit=None,
+                exit_reason=None,
+                order_status='filled'
             )
             self.open_positions[trade.trade_id] = trade
             self._save_trade_to_csv(trade)
@@ -87,9 +104,15 @@ class TradeManager:
 
     def _save_trade_to_csv(self, trade: Trade):
         try:
+            fieldnames = [
+                'trade_id', 'symbol', 'action', 'entry_price', 'exit_price',
+                'quantity', 'leverage', 'entry_time', 'exit_time', 'pnl',
+                'status', 'stop_loss', 'take_profit', 'exit_reason',
+                'order_id', 'order_status'
+            ]
             with open(self.trades_file, 'a', newline='', encoding='utf-8') as file:
-                writer = csv.DictWriter(file, fieldnames=asdict(trade).keys())
-                if self.trades_file.stat().st_size == 0:
+                writer = csv.DictWriter(file, fieldnames=fieldnames)
+                if file.tell() == 0:
                     writer.writeheader()
                 writer.writerow(asdict(trade))
         except Exception as e:
