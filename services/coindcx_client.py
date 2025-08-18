@@ -29,21 +29,6 @@ class CoinDCXFuturesClient:
     def _generate_signature(self, body: str) -> str:
         return hmac.new(self.secret_key.encode('utf-8'), body.encode(), hashlib.sha256).hexdigest()
 
-    def get_futures_balance(self) -> Dict:
-        try:
-            timestamp = int(round(time.time() * 1000))
-            body = {"timestamp": timestamp}
-            json_body = json.dumps(body, separators=(',', ':'))
-            signature = hmac.new(self.secret_key.encode('utf-8'), json_body.encode(), hashlib.sha256).hexdigest()
-            headers = {'Content-Type': 'application/json', 'X-AUTH-APIKEY': self.api_key, 'X-AUTH-SIGNATURE': signature}
-            response = requests.get("https://api.coindcx.com/exchange/v1/derivatives/futures/wallets", data=json_body, headers=headers, timeout=10)
-            if response.status_code == 200:
-                return {"success": True, "data": response.json()}
-            else:
-                return {"success": False, "error": f"HTTP {response.status_code}: {response.text}"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
     def create_futures_order(self, symbol: str, side: OrderSide, order_type: OrderType, quantity: float, price: Optional[float] = None, leverage: float = 1.0, margin_type: MarginType = MarginType.CROSSED) -> Dict:
         try:
             timestamp = int(round(time.time() * 1000))
@@ -54,42 +39,12 @@ class CoinDCXFuturesClient:
             body = json.dumps(body_data, separators=(',', ':'))
             signature = self._generate_signature(body)
             headers = {'Content-Type': 'application/json', 'X-AUTH-APIKEY': self.api_key, 'X-AUTH-SIGNATURE': signature}
-            response = requests.post("https://api.coindcx.com/exchange/v1/derivatives/futures/orders/create", data=body, headers=headers, timeout=15)
+            response = self.session.post("https://api.coindcx.com/exchange/v1/derivatives/futures/orders/create", data=body, headers=headers, timeout=15)
             if response.status_code == 200:
                 return {"success": True, "data": response.json()}
             else:
-                return {"success": False, "error": f"HTTP {response.status_code}: {response.text}"}
+                return {"success": False, "error": response.text}
         except Exception as e:
             return {"success": False, "error": str(e)}
 
-    def get_real_positions(self) -> Dict:
-        try:
-            timestamp = int(round(time.time() * 1000))
-            body_data = {"timestamp": timestamp, "page": "1", "size": "50", "margin_currency_short_name": ["USDT"]}
-            body = json.dumps(body_data, separators=(',', ':'))
-            signature = hmac.new(self.secret_key.encode('utf-8'), body.encode('utf-8'), hashlib.sha256).hexdigest()
-            headers = {'Content-Type': 'application/json', 'X-AUTH-APIKEY': self.api_key, 'X-AUTH-SIGNATURE': signature}
-            response = requests.post("https://api.coindcx.com/exchange/v1/derivatives/futures/positions", data=body, headers=headers, timeout=15)
-            if response.status_code == 200:
-                positions_data = response.json()
-                active_positions = [pos for pos in positions_data if pos.get("active_pos", 0.0) != 0.0] if isinstance(positions_data, list) else []
-                return {"success": True, "data": positions_data, "active_positions": active_positions, "total_positions": len(positions_data), "active_count": len(active_positions)}
-            else:
-                return {"success": False, "error": f"HTTP {response.status_code}: {response.text}"}
-        except Exception as e:
-            return {"success": False, "error": str(e)}
-
-    def get_orders(self) -> List[Dict]:
-        try:
-            timestamp = int(round(time.time() * 1000))
-            body_data = {"timestamp": timestamp, "page": "1", "size": "50"}
-            body = json.dumps(body_data, separators=(',', ':'))
-            signature = hmac.new(self.secret_key.encode('utf-8'), body.encode('utf-8'), hashlib.sha256).hexdigest()
-            headers = {'Content-Type': 'application/json', 'X-AUTH-APIKEY': self.api_key, 'X-AUTH-SIGNATURE': signature}
-            response = requests.post("https://api.coindcx.com/exchange/v1/derivatives/futures/orders", data=body, headers=headers, timeout=15)
-            if response.status_code == 200:
-                return response.json() if isinstance(response.json(), list) else []
-            else:
-                return []
-        except Exception as e:
-            return []
+    # ... (other methods)

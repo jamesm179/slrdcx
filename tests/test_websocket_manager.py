@@ -11,7 +11,6 @@ def manager():
 @pytest.mark.asyncio
 async def test_connect_all(mocker, manager):
     """Test the connect_all method."""
-    # Mock the SinglePairWebSocketClient and its methods
     mock_client_instance = AsyncMock()
     mocker.patch(
         'services.websocket_manager.SinglePairWebSocketClient',
@@ -20,17 +19,13 @@ async def test_connect_all(mocker, manager):
 
     await manager.connect_all()
 
-    # Assert that clients were created for each channel
     from config import COINDCX_CHANNELS
     assert len(manager.clients) == len(COINDCX_CHANNELS)
-
-    # Assert that the connect method was called for each client
     assert mock_client_instance.connect.call_count == len(COINDCX_CHANNELS)
 
 @pytest.mark.asyncio
 async def test_disconnect_all(mocker, manager):
     """Test the disconnect_all method."""
-    # First, populate the clients dictionary as if connect_all was called
     mock_client_instance = AsyncMock()
     from config import COINDCX_CHANNELS, get_symbol_from_channel
     for channel in COINDCX_CHANNELS:
@@ -39,5 +34,4 @@ async def test_disconnect_all(mocker, manager):
 
     await manager.disconnect_all()
 
-    # Assert that the disconnect method was called for each client
     assert mock_client_instance.disconnect.call_count == len(COINDCX_CHANNELS)
